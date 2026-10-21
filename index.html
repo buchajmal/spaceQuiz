@@ -280,6 +280,19 @@
     .personal-best { margin: -12px 0 22px; color: var(--muted); font-weight: 700; }
     .final-score strong { color: var(--ink); font-size: 23px; }
     .personal-best strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+    .missed-review {
+      margin: 0 0 24px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--surface-raised);
+      text-align: left;
+    }
+    .missed-review h2 { margin: 0 0 12px; font-size: 16px; }
+    .missed-review ol { display: grid; gap: 14px; margin: 0; padding-left: 22px; }
+    .missed-review li { padding-left: 3px; }
+    .missed-review li p { margin: 0; overflow-wrap: anywhere; }
+    .missed-review .correct-answer { margin-top: 4px; color: var(--good); font-weight: 700; }
     .result .restart-button { min-width: 170px; }
     .sr-only {
       position: absolute;
@@ -358,6 +371,7 @@
     const PERSONAL_BEST_KEY = "cosmicQuizPersonalBest";
     let current = 0;
     let score = 0;
+    let missedQuestions = [];
     let bestScore = loadBestScore();
     let answered = false;
     let title;
@@ -430,6 +444,7 @@
         feedback.textContent = `Brilliant! ${item.fact}`;
         feedback.classList.add("good");
       } else {
+        missedQuestions.push(current);
         buttons[choice].classList.add("wrong");
         buttons[item.answer].classList.add("reveal");
         feedback.textContent = `Not quite — ${item.options[item.answer]} is right. ${item.fact}`;
@@ -453,6 +468,18 @@
           : percentage >= .4
             ? { emoji: "🌙", title: "Nice exploring!", copy: "You’re finding your orbit. There’s always more of the universe to discover." }
             : { emoji: "🪐", title: "Space cadet in training!", copy: "Every great explorer starts somewhere. Ready to launch again?" };
+      const missedReview = missedQuestions.length
+        ? `<section class="missed-review" aria-labelledby="missed-review-title">
+              <h2 id="missed-review-title">Review missed questions</h2>
+              <ol>${missedQuestions.map(index => {
+                const item = questions[index];
+                return `<li>
+                  <p>${item.question}</p>
+                  <p class="correct-answer">Correct answer: ${item.options[item.answer]}</p>
+                </li>`;
+              }).join("")}</ol>
+            </section>`
+        : "";
       document.getElementById("quiz-content").innerHTML = `
         <div class="result">
           <div class="result-emoji" aria-hidden="true">${result.emoji}</div>
@@ -461,6 +488,7 @@
           <p class="result-copy">${result.copy}</p>
           <p class="final-score">You scored <strong>${score} / ${questions.length}</strong></p>
           <p class="personal-best">Personal best <strong>${bestScore} / ${questions.length}</strong></p>
+          ${missedReview}
           <button class="restart-button" id="restart" type="button">Play again <span aria-hidden="true">↻</span></button>
         </div>`;
       document.getElementById("restart").addEventListener("click", restart);
@@ -470,6 +498,7 @@
     function restart() {
       current = 0;
       score = 0;
+      missedQuestions = [];
       document.getElementById("quiz-content").innerHTML = `
         <div class="topline">
           <p class="eyebrow">Space explorer</p>
